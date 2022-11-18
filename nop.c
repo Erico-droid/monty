@@ -1,13 +1,14 @@
 #include "monty.h"
+
 /**
- *nop - function to do nothing
- *@stack: pointer to to pointer to the doubly linked list
- *@line_number: number of lines in the file
- *Return: nothing
+ * nop - nothing here to see
+ * @stack: no stack operated
+ * @line_count : lines given not counted
+ *
+ * Return: NOTHING
  */
-void nop(stack_t **stack, unsigned int line_number)
+void nop(stack_t **stack, unsigned int line_count)
 {
-(void) stack;
-(void) line_number;
-return;
+	(void) stack;
+	(void) line_count;
 }
