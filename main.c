@@ -1,74 +1,103 @@
 #include "monty.h"
 
-/**
- * main - entry into interpreter
- * @argc: argc counter
- * @argv: arguments
- * Return: 0 on success
- */
-int main(int argc, char *argv[])
-{
-	int fd, ispush = 0;
-	unsigned int line = 1;
-	ssize_t n_read;
-	char *buffer, *token;
-	stack_t *h = NULL;
 
-	if (argc != 2)
-	{
-		printf("USAGE: monty file\n");
-		exit(EXIT_FAILURE);
-	}
-	fd = open(argv[1], O_RDONLY);
-	if (fd == -1)
-	{
-		printf("Error: Can't open file %s\n", argv[1]);
-		exit(EXIT_FAILURE);
-	}
-	buffer = malloc(sizeof(char) * 10000);
-	if (!buffer)
-		return (0);
-	n_read = read(fd, buffer, 10000);
-	if (n_read == -1)
-	{
-		free(buffer);
-		close(fd);
-		exit(EXIT_FAILURE);
-	}
-	token = strtok(buffer, "\n\t\a\r ;:");
-	while (token != NULL)
-	{
-		if (ispush == 1)
-		{
-			push(&h, line, token);
-			ispush = 0;
-			token = strtok(NULL, "\n\t\a\r ;:");
-			line++;
-			continue;
-		}
-		else if (strcmp(token, "push") == 0)
-		{
-			ispush = 1;
-			token = strtok(NULL, "\n\t\a\r ;:");
-			continue;
-		}
-		else
-		{
-			if (get_op_func(token) != 0)
-			{
-				get_op_func(token)(&h, line);
-			}
-			else
-			{
-				free_dlist(&h);
-				printf("L%d: unknown instruction %s\n", line, token);
-				exit(EXIT_FAILURE);
-			}
-		}
-		line++;
-		token = strtok(NULL, "\n\t\a\r ;:");
-	}
-	free_dlist(&h); free(buffer);
-	close(fd);
-	return (0);
+/**
+* opcode_finder - find opcode
+* @stack: stack pointer
+* @opcode: user input opcode
+* @line_number: line number
+* Return: Always 1 (Success) or stderr
+**/
+int find_opcode(stack_t **stack, char *opcode, int line_number)
+{
+instruction_t opcodes[] = {
+{"pall", pall},
+{"pop", pop},
+{"swap", swap},
+{"pint", pint},
+{NULL, NULL}
+};
+
+int i;
+
+for (i = 0; opcodes[i].opcode; i++)
+{
+if (strcmp(opcode, opcodes[i].opcode) == 0)
+{
+(opcodes[i].f)(stack, line_number);
+return (EXIT_SUCCESS);
+}
+}
+fprintf(stderr, "L%d: unknown instruction %s\n", line_number, opcode);
+exit(EXIT_FAILURE);
+}
+
+
+/**
+* main - Process Monty byte codes from a file passed in as an argument
+* @argc: size of argv
+* @argv: A double pointer contain the arguments
+* Return: EXIT_SUCCESS if no errors or EXIT_FAILURE
+**/
+
+int main(__attribute__((unused)) int argc, char const *argv[])
+{
+FILE *mf;
+char *buff = NULL, *opcode, *n;
+size_t lol = 0;
+int line_number = 0;
+stack_t *stack = NULL, *current;
+
+if (argc != 2)
+{
+fprintf(stderr, "USAGE: monty file\n");
+return (EXIT_FAILURE);
+}
+mf = fopen(argv[1], "r");
+if (mf == NULL)
+{
+fprintf(stderr, "Error: can't open file %s\n", argv[1]);
+exit(1);
+}
+while ((getline(&buff, &lol, mf)) != -1)
+{
+line_number++;
+opcode = strtok(buff, DELIMATOR);
+if (opcode == NULL || opcode[0] == '#')
+continue;
+if (!strcmp(opcode, "nop"))
+continue;
+else if (!strcmp(opcode, "push"))
+{
+n = strtok(NULL, DELIMATOR);
+push(&stack, n, line_number);
+}
+else
+find_opcode(&stack, opcode, line_number);
+}
+fclose(mf);
+free(buff);
+while (stack != NULL)
+{
+current = stack;
+stack = stack->next;
+free(current);
+}
+return (0);
+}
+
+/**
+* free_stack - fff
+* @stack: fff
+**/
+void free_stack(stack_t *stack)
+{
+stack_t *next;
+
+while (stack != NULL)
+{
+next = stack->next;
+free(stack);
+stack = next;
+}
 }
